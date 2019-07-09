@@ -1,3 +1,6 @@
 [submodule "python_common"]
 	path = python_common
 	url = git@github.com:cqqyd2014/python_common.git
+[submodule "scrapy_tyc_orm"]
+	path = scrapy_tyc_orm
+	url = git@github.com:cqqyd2014/scrapy_tyc_orm.git
