@@ -10,7 +10,7 @@ dc=DataClear()
 
 
 def hand_scroll(driver):
-        t=random.uniform(500, 1000)
+        t=random.uniform(500, 10000)
         js_scroll = "var q=document.documentElement.scrollTop="+str(t)  # documentElement表示获取根节点元素
         driver.execute_script(js_scroll)
 
@@ -60,7 +60,7 @@ def hand_find_text_element(webdriver,byMethod,value):
         if element==None:
                 return None
         else:
-                element_text=element.text if element.text!='-' else None
+                element_text=element.text if (element.text!='-' and element.text!='暂无信息') else None
                 
                 return element_text
 
