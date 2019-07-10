@@ -116,14 +116,48 @@ class ScrapyTyc:
         return _decorate
     
 
+    #解析href单位和个人
+    #https://www.tianyancha.com/brand/b659a197114
+    #https://www.tianyancha.com/organize/b80104913
+    def extract_company_human_href(self,element_href):
+        _type=''
+        _id=''
+        _name=element_href.text
+        href=element_href.get_attribute('href')
+        _flag=href.find("/company/")
+        if _flag!=-1:
+            _type='company'
+            _id=href[_flag+9:len(href)-1]
+        _flag=href.find("/human/")
+        if _flag!=-1:
+            _type='human'
+            
+            _id=href[_flag+7:len(href)-1]
+        _flag=href.find("/brand/")
+        if _flag!=-1:
+            _type='brand'
+            
+            _id=href[_flag+7:len(href)-1]
+        _flag=href.find("/organize/")
+        if _flag!=-1:
+            _type='organize'
+            
+            _id=href[_flag+7:len(href)-1]
+        return {'_name':_name,'_id':_id,'_type':_type,'_href':href}
+        
 
 
     #查询结果的企业信息
     @handle_open_page
     def get_company_main_info(self,c_type,c_company_id):
-        
-       
-        
+        #//*[@id="_container_baseInfo"]/table[1]/tbody/tr[1]/td[1]/div/div[1]/div[2]/div[1]/a
+        #法人
+        element_lawman_name=self.driver.find_element(By.XPATH,'//*[@id="_container_baseInfo"]/table[1]/tbody/tr[1]/td[1]/div/div[1]/div[2]/div[1]/a')
+        _lawman_name=self.extract_company_human_href(element_lawman_name)
+        #print(_lawman_name)
+        c_lawman_name=_lawman_name['_name']
+        c_lawman_href=_lawman_name['_href']
+        c_lawman_id=_lawman_name['_id']
         #单位名称
         c_name_h1=self.driver.find_element(By.XPATH,'.//div[contains(@class, "header")][1]/h1')
         #注册资本
@@ -167,7 +201,7 @@ class ScrapyTyc:
 
         c_business=hand_find_text_element(self.driver,By.XPATH,'//*[@id="_container_baseInfo"]/table[2]/tbody/tr[11]/td[2]/span')
         db_session=create_session()
-        companyBaseInfo=CompanyBaseInfo(c_business=c_business,c_addr=c_addr,c_english_name=c_english_name,c_old_name=c_old_name,c_social_security_staff=c_social_security_staff,c_staff=c_staff,c_tax_level=c_tax_level,c_business_period=c_business_period,c_permit_gov=c_permit_gov,c_permit_date=c_permit_date,c_industry=c_industry,c_type=c_type,c_org_code=c_org_code,c_tax_code=c_tax_code,c_reg_code=c_reg_code,c_uscc=c_uscc,c_start_date=c_start_date,c_company_id=c_company_id,c_name=c_name_h1.text,c_reg_capital=c_reg_capital,c_real_capital=c_real_capital)
+        companyBaseInfo=CompanyBaseInfo(c_lawman_id=c_lawman_id,c_lawman_name=c_lawman_name,c_lawman_href=c_lawman_href,c_business=c_business,c_addr=c_addr,c_english_name=c_english_name,c_old_name=c_old_name,c_social_security_staff=c_social_security_staff,c_staff=c_staff,c_tax_level=c_tax_level,c_business_period=c_business_period,c_permit_gov=c_permit_gov,c_permit_date=c_permit_date,c_industry=c_industry,c_type=c_type,c_org_code=c_org_code,c_tax_code=c_tax_code,c_reg_code=c_reg_code,c_uscc=c_uscc,c_start_date=c_start_date,c_company_id=c_company_id,c_name=c_name_h1.text,c_reg_capital=c_reg_capital,c_real_capital=c_real_capital)
         companyBaseInfo.saveOfUpdate(db_session)
         self.get_shareholder(db_session,c_company_id)
         self.get_changelog(db_session,c_company_id)
@@ -207,18 +241,22 @@ class ScrapyTyc:
                 c_member_id=''
                 company_flag=c_member_href.find("/company/")
                 if company_flag!=-1:
-                    c_shareholder_type='company'
-                    c_shareholder_id=c_member_href[company_flag+9:len(c_member_href)-1]
+                    c_member_type='company'
+                    c_member_id=c_member_href[company_flag+9:len(c_member_href)-1]
                 else:
-                    c_shareholder_type='human'
+                    c_member_type='human'
                     human_flag=c_member_href.find("/human/")
-                    c_shareholder_id=c_member_href[human_flag+7:len(c_member_href)-1]
+                    c_member_id=c_member_href[human_flag+7:len(c_member_href)-1]
+                #//*[@id="_container_staff"]/div/table/tbody/tr[1]/td[3]/span[2]
+                jobs=table_rows[flag].find_elements_by_xpath('./td[3]/span')
+                c_member_job=[]
+                for job in jobs:
+                    c_member_job.append(job.text.replace('，',''))
                 
-                c_member_job=dc.text_to_date(table_rows[flag].find_element_by_xpath('./td[3]').text)
                 
                 
                 
-                companyMainMember=CompanyMainMember(c_member_order=c_member_order,c_member_name=c_member_name,c_company_id=c_company_id,member_href=c_member_href,c_member_type=c_member_type,c_member_id=c_member_id,c_member_job=c_member_job)
+                companyMainMember=CompanyMainMember(c_member_order=c_member_order,c_member_name=c_member_name,c_company_id=c_company_id,c_member_href=c_member_href,c_member_type=c_member_type,c_member_id=c_member_id,c_member_job=c_member_job)
                 companyMainMember.saveOfUpdate(db_session)
                 flag+=1
 
